@@ -40,12 +40,12 @@ class PipedServices extends GetxService {
       _isLoggedIn = true;
       _insApiUrl = insApiUrl;
 
-      if (response.data.runtimeType.toString() == "_Map<String, dynamic>" &&
+      if (response.data is Map<String, dynamic> &&
           response.data.containsKey("error")) {
         return Res(0, errorMessage: response.data['error']);
       }
 
-      printINFO("Login successful! topken : ${data['token']}");
+      printINFO("Login successful! token : ${data['token']}");
       return Res(1, response: response.data);
     } on DioException catch (e) {
       printERROR("Login Failed! => ${e.response?.statusMessage ?? e.message}");
@@ -97,7 +97,7 @@ class PipedServices extends GetxService {
                     PipedInstance(name: data['name'], apiUrl: data['api_url']))
                 .toList());
       } else {
-        if (response.data.runtimeType.toString() == "_Map<String, dynamic>" &&
+        if (response.data is Map<String, dynamic> &&
             response.data.containsKey("error")) {
           return Res(0, errorMessage: response.data['error']);
         }

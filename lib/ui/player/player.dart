@@ -256,9 +256,7 @@ class _LyricsPanel extends StatelessWidget {
                   playerController.currentSong.value != null) {
                 // Trigger lyrics fetch if not already loaded
                 WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (!playerController.showLyricsflag.value) {
-                    playerController.showLyrics();
-                  }
+                  playerController.fetchLyricsIfNeeded();
                 });
               }
               return const LyricsWidget(

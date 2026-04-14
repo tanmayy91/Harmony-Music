@@ -94,7 +94,7 @@ class MyAudioHandler extends BaseAudioHandler with GetxServiceMixin {
     _listenToPlaybackForNextSong();
     _listenForSequenceStateChanges();
     _listenForPrefetch();
-    final appPrefsBox = Hive.box("appPrefs");
+    final appPrefsBox = Hive.box("AppPrefs");
     _player
         .setSkipSilenceEnabled(appPrefsBox.get("skipSilenceEnabled") ?? false);
     loopModeEnabled = appPrefsBox.get("isLoopModeEnabled") ?? false;
@@ -235,7 +235,7 @@ class MyAudioHandler extends BaseAudioHandler with GetxServiceMixin {
 
   Future<void> _prefetchNextSong() async {
     try {
-      final nextIndex = _getNextSongIndex();
+      final nextIndex = _peekNextSongIndex();
       if (nextIndex == currentIndex) return;
       if (nextIndex < 0 || nextIndex >= queue.value.length) return;
       final nextSong = queue.value[nextIndex];
@@ -248,6 +248,26 @@ class MyAudioHandler extends BaseAudioHandler with GetxServiceMixin {
       }
     } catch (e) {
       printERROR("Prefetch error: $e");
+    }
+  }
+
+  /// Peek at the next song index without mutating shuffle state.
+  /// Unlike _getNextSongIndex(), this is safe to call from prefetch.
+  int _peekNextSongIndex() {
+    if (shuffleModeEnabled) {
+      if (currentShuffleIndex + 1 >= shuffledQueue.length) {
+        return currentIndex; // would reshuffle, can't predict
+      }
+      return queue.value
+          .indexWhere((item) => item.id == shuffledQueue[currentShuffleIndex + 1]);
+    }
+
+    if (queue.value.length > currentIndex + 1) {
+      return currentIndex + 1;
+    } else if (queueLoopModeEnabled) {
+      return 0;
+    } else {
+      return currentIndex;
     }
   }
 
@@ -301,6 +321,9 @@ class MyAudioHandler extends BaseAudioHandler with GetxServiceMixin {
 
   @override
   Future<void> updateQueue(List<MediaItem> queue) async {
+    // Clear stale prefetched streams when queue changes
+    _prefetchedStreams.clear();
+    _nextSongPrefetched = false;
     final newQueue = this.queue.value
       ..replaceRange(0, this.queue.value.length, queue);
     this.queue.add(newQueue);
@@ -893,7 +916,7 @@ class MyAudioHandler extends BaseAudioHandler with GetxServiceMixin {
       HMStreamingData? streamInfo;
       if (songsUrlCacheBox.containsKey(songId) && !generateNewUrl) {
         final streamInfoJson = songsUrlCacheBox.get(songId);
-        if (streamInfoJson.runtimeType.toString().contains("Map") &&
+        if (streamInfoJson is Map &&
             !isExpired(url: (streamInfoJson['lowQualityAudio']['url']))) {
           printINFO("Got cached Url ($songId)");
           streamInfo = HMStreamingData.fromJson(streamInfoJson);

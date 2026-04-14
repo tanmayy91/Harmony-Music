@@ -411,7 +411,7 @@ class PlayerController extends GetxController
   }
 
   Future<void> _addRadioContinuation(dynamic item) async {
-    final isSong = item.runtimeType.toString() == "MediaItem";
+    final isSong = item is MediaItem;
     final content = await _musicServices.getWatchPlaylist(
         videoId: isSong ? item.id : "",
         radio: true,
@@ -732,32 +732,51 @@ class PlayerController extends GetxController
 
   Future<void> showLyrics() async {
     showLyricsflag.value = !showLyricsflag.value;
-    if ((lyrics["synced"].isEmpty && lyrics['plainLyrics'].isEmpty) &&
-        showLyricsflag.value) {
-      isLyricsLoading.value = true;
-      try {
-        final Map<String, dynamic>? lyricsR =
-            await SyncedLyricsService.getSyncedLyrics(
-                currentSong.value!, progressBarStatus.value.total.inSeconds);
-        if (lyricsR != null) {
-          lyrics.value = lyricsR;
-          isLyricsLoading.value = false;
-          return;
-        }
-        final related = await _musicServices.getWatchPlaylist(
-            videoId: currentSong.value!.id, onlyRelated: true);
-        final relatedLyricsId = related['lyrics'];
-        if (relatedLyricsId != null) {
-          final lyrics_ = await _musicServices.getLyrics(relatedLyricsId);
-          lyrics.value = {"synced": "", "plainLyrics": lyrics_};
-        } else {
-          lyrics.value = {"synced": "", "plainLyrics": "NA"};
-        }
-      } catch (e) {
+    if (showLyricsflag.value) {
+      await _fetchLyricsIfNeeded();
+    }
+  }
+
+  /// Fetches lyrics if not already loaded. Called by both showLyrics toggle
+  /// and auto-trigger from lyrics panel.
+  Future<void> fetchLyricsIfNeeded() async {
+    if (showLyricsflag.value) return; // already toggled on, skip
+    showLyricsflag.value = true;
+    await _fetchLyricsIfNeeded();
+  }
+
+  Future<void> _fetchLyricsIfNeeded() async {
+    final synced = lyrics["synced"]?.toString() ?? "";
+    final plain = lyrics["plainLyrics"]?.toString() ?? "";
+    if (synced.isNotEmpty || plain.isNotEmpty) return; // already loaded
+
+    isLyricsLoading.value = true;
+    try {
+      if (currentSong.value == null) {
+        isLyricsLoading.value = false;
+        return;
+      }
+      final Map<String, dynamic>? lyricsR =
+          await SyncedLyricsService.getSyncedLyrics(
+              currentSong.value!, progressBarStatus.value.total.inSeconds);
+      if (lyricsR != null) {
+        lyrics.value = lyricsR;
+        isLyricsLoading.value = false;
+        return;
+      }
+      final related = await _musicServices.getWatchPlaylist(
+          videoId: currentSong.value!.id, onlyRelated: true);
+      final relatedLyricsId = related['lyrics'];
+      if (relatedLyricsId != null) {
+        final lyrics_ = await _musicServices.getLyrics(relatedLyricsId);
+        lyrics.value = {"synced": "", "plainLyrics": lyrics_};
+      } else {
         lyrics.value = {"synced": "", "plainLyrics": "NA"};
       }
-      isLyricsLoading.value = false;
+    } catch (e) {
+      lyrics.value = {"synced": "", "plainLyrics": "NA"};
     }
+    isLyricsLoading.value = false;
   }
 
   void changeLyricsMode(int? val) {

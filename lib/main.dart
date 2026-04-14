@@ -61,7 +61,8 @@ class MyApp extends StatelessWidget {
                   data: mQuery.copyWith(textScaler: scale),
                   child: AnimatedTheme(
                       duration: const Duration(milliseconds: 700),
-                      data: controller.themedata.value!,
+                      data: controller.themedata.value ??
+                          ThemeData.dark(useMaterial3: true),
                       child: child!),
                 ),
               ),
@@ -99,7 +100,7 @@ Future<void> startApplicationServices() async {
   }
 }
 
-initHive() async {
+Future<void> initHive() async {
   String applicationDataDirectoryPath;
   if (GetPlatform.isDesktop) {
     applicationDataDirectoryPath =

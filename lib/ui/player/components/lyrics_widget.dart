@@ -195,11 +195,13 @@ class _AppleMusicLyricsScrollerState extends State<_AppleMusicLyricsScroller> {
     return idx;
   }
 
+  // Estimated height per lyrics line (vertical padding + text height)
+  static const double _estimatedLineHeight = 72.0;
+
   void _scrollToIndex(int index) {
     if (!_scrollController.hasClients) return;
-    // Estimate position: each line ~70px, center in view
     final viewportHeight = _scrollController.position.viewportDimension;
-    final estimatedOffset = (index * 72.0) - (viewportHeight / 3);
+    final estimatedOffset = (index * _estimatedLineHeight) - (viewportHeight / 3);
     _scrollController.animateTo(
       estimatedOffset.clamp(
           0.0, _scrollController.position.maxScrollExtent),
@@ -254,13 +256,13 @@ class _AppleMusicLyricsScrollerState extends State<_AppleMusicLyricsScroller> {
               duration: const Duration(milliseconds: 350),
               curve: Curves.easeOut,
               style: TextStyle(
-                fontSize: isActive ? 28 : 22,
+                fontSize: isActive ? 30 : 20,
                 fontWeight: isActive ? FontWeight.w900 : FontWeight.w700,
                 color: isActive
                     ? Colors.white
                     : isPast
-                        ? Colors.white.withOpacity(0.25)
-                        : Colors.white.withOpacity(0.40),
+                        ? Colors.white.withOpacity(0.35)
+                        : Colors.white.withOpacity(0.50),
                 height: 1.3,
                 letterSpacing: isActive ? -0.5 : -0.3,
                 shadows: isActive

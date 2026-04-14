@@ -587,25 +587,67 @@ class PlaylistScreen extends StatelessWidget {
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .titleLarge!
-                                                .copyWith(fontSize: 30),
+                                                .copyWith(
+                                                  fontSize: 28,
+                                                  fontWeight: FontWeight.w800,
+                                                  letterSpacing: -0.5,
+                                                ),
                                           ),
                                         ),
                                         Padding(
                                           padding:
-                                              const EdgeInsets.only(top: 8.0),
-                                          child: Marquee(
-                                            delay: const Duration(
-                                                milliseconds: 300),
-                                            duration:
-                                                const Duration(seconds: 5),
-                                            id: description.hashCode.toString(),
-                                            child: Text(
-                                              description ?? "playlist".tr,
-                                              maxLines: 1,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .titleSmall,
-                                            ),
+                                              const EdgeInsets.only(top: 6.0),
+                                          child: Row(
+                                            children: [
+                                              if (playlistController.songList.isNotEmpty)
+                                                Text(
+                                                  "${playlistController.songList.length} ${"songs".tr}",
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .titleSmall!
+                                                      .copyWith(fontSize: 13),
+                                                ),
+                                              if (description != null && description!.isNotEmpty) ...[
+                                                if (playlistController.songList.isNotEmpty)
+                                                  Padding(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                                                    child: Text(
+                                                      "•",
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .titleSmall,
+                                                    ),
+                                                  ),
+                                                Expanded(
+                                                  child: Marquee(
+                                                    delay: const Duration(
+                                                        milliseconds: 300),
+                                                    duration:
+                                                        const Duration(seconds: 5),
+                                                    id: description.hashCode.toString(),
+                                                    child: Text(
+                                                      description!,
+                                                      maxLines: 1,
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .titleSmall!
+                                                          .copyWith(fontSize: 13),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                              if (description == null || description!.isEmpty)
+                                                Expanded(
+                                                  child: Text(
+                                                    "playlist".tr,
+                                                    maxLines: 1,
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .titleSmall!
+                                                        .copyWith(fontSize: 13),
+                                                  ),
+                                                ),
+                                            ],
                                           ),
                                         ),
                                       ],

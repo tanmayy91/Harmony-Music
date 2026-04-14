@@ -19,6 +19,7 @@ class ContentListItem extends StatelessWidget {
     return InkWell(
       splashColor: Colors.transparent,
       highlightColor: Colors.transparent,
+      borderRadius: BorderRadius.circular(14),
       onTap: () {
         if (isAlbum) {
           Get.toNamed(ScreenNavigationSetup.albumScreen,
@@ -30,16 +31,19 @@ class ContentListItem extends StatelessWidget {
             arguments: [content, content.playlistId]);
       },
       child: Container(
-        width: 140,
-        height: 195,
+        width: 148,
+        height: 210,
         padding: const EdgeInsets.symmetric(horizontal: 4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             isAlbum
-                ? ImageWidget(
-                    size: 132,
-                    album: content,
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: ImageWidget(
+                      size: 140,
+                      album: content,
+                    ),
                   )
                 : content.isCloudPlaylist ||
                         !(content.playlistId == 'LIBRP' ||
@@ -47,12 +51,15 @@ class ContentListItem extends StatelessWidget {
                             content.playlistId == 'SongsCache' ||
                             content.playlistId == 'SongDownloads')
                     ? SizedBox.square(
-                        dimension: 132,
+                        dimension: 140,
                         child: Stack(
                           children: [
-                            ImageWidget(
-                              size: 132,
-                              playlist: content,
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(14),
+                              child: ImageWidget(
+                                size: 140,
+                                playlist: content,
+                              ),
                             ),
                             if (content.isPipedPlaylist)
                               Align(
@@ -60,10 +67,10 @@ class ContentListItem extends StatelessWidget {
                                 child: Padding(
                                   padding: const EdgeInsets.all(8.0),
                                   child: Container(
-                                    height: 20,
-                                    width: 20,
+                                    height: 22,
+                                    width: 22,
                                     decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(6),
+                                      borderRadius: BorderRadius.circular(7),
                                       color: Theme.of(context)
                                           .colorScheme
                                           .secondary
@@ -75,7 +82,10 @@ class ContentListItem extends StatelessWidget {
                                       style: Theme.of(context)
                                           .textTheme
                                           .titleMedium!
-                                          .copyWith(fontSize: 12),
+                                          .copyWith(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w700,
+                                          ),
                                     )),
                                   ),
                                 ),
@@ -86,10 +96,10 @@ class ContentListItem extends StatelessWidget {
                                 child: Padding(
                                   padding: const EdgeInsets.all(8.0),
                                   child: Container(
-                                    height: 20,
-                                    width: 20,
+                                    height: 22,
+                                    width: 22,
                                     decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(6),
+                                      borderRadius: BorderRadius.circular(7),
                                       color: Theme.of(context)
                                           .colorScheme
                                           .secondary
@@ -101,7 +111,10 @@ class ContentListItem extends StatelessWidget {
                                       style: Theme.of(context)
                                           .textTheme
                                           .titleMedium!
-                                          .copyWith(fontSize: 12),
+                                          .copyWith(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w700,
+                                          ),
                                     )),
                                   ),
                                 ),
@@ -110,11 +123,11 @@ class ContentListItem extends StatelessWidget {
                         ),
                       )
                     : Container(
-                        height: 132,
-                        width: 132,
+                        height: 140,
+                        width: 140,
                         decoration: BoxDecoration(
                             color: Theme.of(context).primaryColorLight,
-                            borderRadius: BorderRadius.circular(12)),
+                            borderRadius: BorderRadius.circular(14)),
                         child: Center(
                             child: Icon(
                           content.playlistId == 'LIBRP'
@@ -139,6 +152,7 @@ class ContentListItem extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleMedium!.copyWith(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
+                          letterSpacing: -0.2,
                         ),
                   ),
                   const SizedBox(height: 2),

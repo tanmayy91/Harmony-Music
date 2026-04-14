@@ -13,6 +13,7 @@ import '../../navigator.dart';
 import '../../player/player_controller.dart';
 import '../../widgets/create_playlist_dialog.dart';
 import '../../widgets/loader.dart';
+import '../../widgets/playlist_collage_widget.dart';
 import '../../widgets/playlist_export_dialog.dart';
 import '../../widgets/snackbar.dart';
 import '../../widgets/song_list_tile.dart';
@@ -64,9 +65,18 @@ class PlaylistScreen extends StatelessWidget {
                         final opacityValue = 1 -
                             playlistController.scrollOffset.value /
                                 (size.width - 100);
+                        // Collect first 4 unique art URLs from loaded songs
+                        final artUrls = playlistController.songList
+                            .map((s) => s.artUri?.toString() ?? '')
+                            .where((u) => u.isNotEmpty)
+                            .toSet()
+                            .take(4)
+                            .toList();
+                        final useCollage = artUrls.length >= 4;
                         return Opacity(
                           opacity: opacityValue < 0 ||
-                                  playlistController.isSearchingOn.isTrue && !landscape
+                                  playlistController.isSearchingOn.isTrue &&
+                                      !landscape
                               ? 0
                               : opacityValue,
                           child: DecoratedBox(
@@ -91,14 +101,25 @@ class PlaylistScreen extends StatelessWidget {
                                 )
                               ],
                             ),
-                            child: CachedNetworkImage(
-                              imageUrl: Thumbnail(playlistController
-                                      .playlist.value.thumbnailUrl)
-                                  .extraHigh,
-                              fit: landscape ? BoxFit.fitHeight : BoxFit.cover,
-                              width: landscape ? null : size.width,
-                              height: landscape ? size.height : size.width,
-                            ),
+                            child: useCollage
+                                ? PlaylistCollageWidget(
+                                    imageUrls: artUrls,
+                                    size: landscape ? size.height : size.width,
+                                    borderRadius: 0,
+                                  )
+                                : CachedNetworkImage(
+                                    imageUrl: Thumbnail(playlistController
+                                            .playlist.value.thumbnailUrl)
+                                        .extraHigh,
+                                    fit: landscape
+                                        ? BoxFit.fitHeight
+                                        : BoxFit.cover,
+                                    width:
+                                        landscape ? null : size.width,
+                                    height: landscape
+                                        ? size.height
+                                        : size.width,
+                                  ),
                           ),
                         );
                       }))
@@ -251,300 +272,184 @@ class PlaylistScreen extends StatelessWidget {
                                 : playlistController.songList.length + 3,
                             itemBuilder: (_, index) {
                               if (index == 0) {
+                                // ── Action row ──────────────────────────────
                                 return Padding(
-                                  padding: const EdgeInsets.only(left: 15.0),
-                                  child: SizedBox(
-                                    height: 40,
-                                    child: SingleChildScrollView(
-                                      scrollDirection: Axis.horizontal,
-                                      child: Row(
-                                        children: [
-                                          // Bookmark button
-                                          Obx(() => (playlistController.playlist
-                                                      .value.isPipedPlaylist ||
-                                                  !playlistController.playlist
-                                                      .value.isCloudPlaylist)
-                                              ? const SizedBox.shrink()
-                                              : IconButton(
-                                                  tooltip: playlistController
-                                                          .isAddedToLibrary
-                                                          .isFalse
-                                                      ? "addToLibrary".tr
-                                                      : "removeFromLibrary".tr,
-                                                  splashRadius: 10,
-                                                  onPressed: () {
-                                                    final add = playlistController
-                                                        .isAddedToLibrary.isFalse;
-                                                    playlistController
-                                                        .addNremoveFromLibrary(
-                                                            playlistController
-                                                                .playlist.value,
-                                                            add: add)
-                                                        .then((value) {
-                                                      if (!context.mounted) {
-                                                        return;
-                                                      }
-                                      
-                                                      ScaffoldMessenger.of(
-                                                              context)
-                                                          .showSnackBar(snackbar(
-                                                              context,
-                                                              value
-                                                                  ? add
-                                                                      ? "playlistBookmarkAddAlert"
-                                                                          .tr
-                                                                      : "listBookmarkRemoveAlert"
-                                                                          .tr
-                                                                  : "operationFailed"
-                                                                      .tr,
-                                                              size: SanckBarSize
-                                                                  .MEDIUM));
-                                                    });
-                                                  },
-                                                  icon: Icon(playlistController
-                                                          .isAddedToLibrary
-                                                          .isFalse
-                                                      ? Icons.bookmark_add
-                                                      : Icons.bookmark_added))),
-                                          // Play button
-                                          IconButton(
-                                            tooltip: "play".tr,
-                                              onPressed: () {
-                                                playerController.playPlayListSong(
-                                                    List<MediaItem>.from(
-                                                        playlistController
-                                                            .songList),
-                                                    0,
-                                                    playfrom: PlaylingFrom(
-                                                        name: playlistController
-                                                            .playlist.value.title,
-                                                        type: PlaylingFromType
-                                                            .PLAYLIST));
-                                              },
-                                              icon: Icon(
-                                                Icons.play_circle,
-                                                color: Theme.of(context)
-                                                    .textTheme
-                                                    .titleMedium!
-                                                    .color,
-                                              )),
-                                          // Enqueue button
-                                          IconButton(
+                                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      // Secondary icon row
+                                      SingleChildScrollView(
+                                        scrollDirection: Axis.horizontal,
+                                        child: Row(
+                                          children: [
+                                            // Bookmark
+                                            Obx(() => (playlistController.playlist.value.isPipedPlaylist ||
+                                                    !playlistController.playlist.value.isCloudPlaylist)
+                                                ? const SizedBox.shrink()
+                                                : _PlaylistIconChip(
+                                                    icon: playlistController.isAddedToLibrary.isFalse
+                                                        ? Icons.bookmark_add_rounded
+                                                        : Icons.bookmark_added_rounded,
+                                                    tooltip: playlistController.isAddedToLibrary.isFalse
+                                                        ? "addToLibrary".tr
+                                                        : "removeFromLibrary".tr,
+                                                    onTap: () {
+                                                      final add = playlistController.isAddedToLibrary.isFalse;
+                                                      playlistController
+                                                          .addNremoveFromLibrary(playlistController.playlist.value, add: add)
+                                                          .then((value) {
+                                                        if (!context.mounted) return;
+                                                        ScaffoldMessenger.of(context).showSnackBar(snackbar(
+                                                            context,
+                                                            value
+                                                                ? add
+                                                                    ? "playlistBookmarkAddAlert".tr
+                                                                    : "listBookmarkRemoveAlert".tr
+                                                                : "operationFailed".tr,
+                                                            size: SanckBarSize.MEDIUM));
+                                                      });
+                                                    },
+                                                  )),
+                                            // Enqueue
+                                            _PlaylistIconChip(
+                                              icon: Icons.merge_rounded,
                                               tooltip: "enqueueSongs".tr,
-                                              onPressed: () {
+                                              onTap: () {
                                                 Get.find<PlayerController>()
-                                                    .enqueueSongList(
-                                                        playlistController
-                                                            .songList
-                                                            .toList())
+                                                    .enqueueSongList(playlistController.songList.toList())
                                                     .whenComplete(() {
                                                   if (context.mounted) {
-                                                    ScaffoldMessenger.of(context)
-                                                        .showSnackBar(snackbar(
-                                                            context,
-                                                            "songEnqueueAlert".tr,
-                                                            size: SanckBarSize
-                                                                .MEDIUM));
+                                                    ScaffoldMessenger.of(context).showSnackBar(snackbar(
+                                                        context, "songEnqueueAlert".tr,
+                                                        size: SanckBarSize.MEDIUM));
                                                   }
                                                 });
                                               },
-                                              icon: Icon(
-                                                Icons.merge,
-                                                color: Theme.of(context)
-                                                    .textTheme
-                                                    .titleMedium!
-                                                    .color,
-                                              )),
-                                      
-                                          // Shuffle button
-                                          IconButton(
-                                              tooltip: "shuffle".tr,
-                                              onPressed: () {
-                                                final songsToplay =
-                                                    List<MediaItem>.from(
-                                                        playlistController
-                                                            .songList);
-                                                songsToplay.shuffle();
-                                                songsToplay.shuffle();
-                                                playerController.playPlayListSong(
-                                                    songsToplay, 0,
-                                                    playfrom: PlaylingFrom(
-                                                        name: playlistController
-                                                            .playlist.value.title,
-                                                        type: PlaylingFromType
-                                                            .PLAYLIST));
-                                              },
-                                              icon: Icon(
-                                                Icons.shuffle,
-                                                color: Theme.of(context)
-                                                    .textTheme
-                                                    .titleMedium!
-                                                    .color,
-                                              )),
-                                          // Download button
-                                          GetX<Downloader>(builder: (controller) {
-                                            final id = playlistController
-                                                .playlist.value.playlistId;
-                                            return IconButton(
-                                              tooltip: "downloadPlaylist".tr,
-                                              onPressed: () {
-                                                if (playlistController
-                                                    .isDownloaded.isTrue) {
-                                                  return;
-                                                }
-                                                controller.downloadPlaylist(
-                                                    id,
-                                                    playlistController.songList
-                                                        .toList());
-                                              },
-                                              icon: playlistController
-                                                      .isDownloaded.isTrue
-                                                  ? const Icon(
-                                                      Icons.download_done)
-                                                  : controller.playlistQueue
-                                                              .containsKey(id) &&
-                                                          controller
-                                                                  .currentPlaylistId
-                                                                  .toString() ==
-                                                              id
-                                                      ? Stack(
-                                                          children: [
-                                                            Center(
-                                                                child: Text(
-                                                                    "${controller.playlistDownloadingProgress.value}/${playlistController.songList.length}",
-                                                                    style: Theme.of(
-                                                                            context)
-                                                                        .textTheme
-                                                                        .titleMedium!
-                                                                        .copyWith(
-                                                                            fontSize:
-                                                                                10,
-                                                                            fontWeight:
-                                                                                FontWeight.bold))),
-                                                            const Center(
-                                                                child:
-                                                                    LoadingIndicator(
-                                                              dimension: 30,
-                                                            ))
-                                                          ],
-                                                        )
-                                                      : controller.playlistQueue
-                                                              .containsKey(id)
-                                                          ? const Stack(
-                                                              children: [
-                                                                Center(
-                                                                    child: Icon(
-                                                                  Icons
-                                                                      .hourglass_bottom,
-                                                                  size: 20,
-                                                                )),
-                                                                Center(
-                                                                    child:
-                                                                        LoadingIndicator(
-                                                                  dimension: 30,
-                                                                ))
-                                                              ],
-                                                            )
-                                                          : const Icon(
-                                                              Icons.download),
-                                            );
-                                          }),
-                                      
-                                          if (playlistController
-                                              .isAddedToLibrary.isTrue)
-                                            IconButton(
-                                                tooltip:
-                                                    "syncPlaylistSongs".tr,
-                                                onPressed: () {
-                                                  playlistController
-                                                      .syncPlaylistSongs();
-                                                },
-                                                icon:
-                                                    const Icon(Icons.cloud_sync)),
-                                          if (playlistController
-                                              .playlist.value.isPipedPlaylist)
-                                            IconButton(
-                                                tooltip:
-                                                    "blacklistPipedPlaylist".tr,
-                                                icon: const Icon(
-                                                  Icons.block,
-                                                  size: 20,
-                                                ),
-                                                splashRadius: 10,
-                                                onPressed: () {
-                                                  Get.nestedKey(
-                                                          ScreenNavigationSetup
-                                                              .id)!
-                                                      .currentState!
-                                                      .pop();
-                                                  Get.find<
-                                                          LibraryPlaylistsController>()
-                                                      .blacklistPipedPlaylist(
-                                                          playlistController
-                                                              .playlist.value);
-                                                  ScaffoldMessenger.of(
-                                                          Get.context!)
-                                                      .showSnackBar(snackbar(
-                                                          Get.context!,
-                                                          "playlistBlacklistAlert"
-                                                              .tr,
-                                                          size: SanckBarSize
-                                                              .MEDIUM));
-                                                }),
-                                          if (playlistController
-                                              .playlist.value.isCloudPlaylist)
-                                            IconButton(
-                                              tooltip:
-                                                  "sharePlaylist".tr,
-                                              visualDensity: const VisualDensity(
-                                                vertical: -3,
+                                            ),
+                                            // Download
+                                            GetX<Downloader>(builder: (dlCtrl) {
+                                              final id = playlistController.playlist.value.playlistId;
+                                              final isDone = playlistController.isDownloaded.isTrue;
+                                              final isActive = dlCtrl.playlistQueue.containsKey(id) &&
+                                                  dlCtrl.currentPlaylistId.toString() == id;
+                                              final isQueued = dlCtrl.playlistQueue.containsKey(id);
+                                              return _PlaylistIconChip(
+                                                tooltip: "downloadPlaylist".tr,
+                                                icon: isDone ? Icons.download_done_rounded : Icons.download_rounded,
+                                                onTap: isDone
+                                                    ? null
+                                                    : () => dlCtrl.downloadPlaylist(
+                                                        id, playlistController.songList.toList()),
+                                                child: isActive
+                                                    ? Stack(alignment: Alignment.center, children: [
+                                                        Text(
+                                                            "${dlCtrl.playlistDownloadingProgress.value}/${playlistController.songList.length}",
+                                                            style: Theme.of(context)
+                                                                .textTheme
+                                                                .titleMedium!
+                                                                .copyWith(fontSize: 9, fontWeight: FontWeight.bold)),
+                                                        const LoadingIndicator(dimension: 22),
+                                                      ])
+                                                    : isQueued
+                                                        ? const Stack(alignment: Alignment.center, children: [
+                                                            Icon(Icons.hourglass_bottom_rounded, size: 16),
+                                                            LoadingIndicator(dimension: 22),
+                                                          ])
+                                                        : null,
+                                              );
+                                            }),
+                                            // Cloud Sync
+                                            if (playlistController.isAddedToLibrary.isTrue)
+                                              _PlaylistIconChip(
+                                                icon: Icons.cloud_sync_rounded,
+                                                tooltip: "syncPlaylistSongs".tr,
+                                                onTap: playlistController.syncPlaylistSongs,
                                               ),
-                                              splashRadius: 10,
-                                              onPressed: () {
-                                                final content = playlistController
-                                                    .playlist.value;
-                                                if (content.isPipedPlaylist) {
-                                                  Share.share(
-                                                      "https://piped.video/playlist?list=${content.playlistId}");
-                                                } else {
-                                                  final isPlaylistIdPrefixAvlbl =
-                                                      content.playlistId
-                                                              .substring(0, 2) ==
-                                                          "VL";
-                                                  String url =
-                                                      "https://youtube.com/playlist?list=";
-                                      
-                                                  url = isPlaylistIdPrefixAvlbl
-                                                      ? url +
-                                                          content.playlistId
-                                                              .substring(2)
-                                                      : url + content.playlistId;
-                                                  Share.share(url);
-                                                }
-                                              },
-                                              icon: const Icon(
-                                                Icons.share,
-                                                size: 20,
+                                            // Blacklist (Piped)
+                                            if (playlistController.playlist.value.isPipedPlaylist)
+                                              _PlaylistIconChip(
+                                                icon: Icons.block_rounded,
+                                                tooltip: "blacklistPipedPlaylist".tr,
+                                                onTap: () {
+                                                  Get.nestedKey(ScreenNavigationSetup.id)!.currentState!.pop();
+                                                  Get.find<LibraryPlaylistsController>()
+                                                      .blacklistPipedPlaylist(playlistController.playlist.value);
+                                                  if (Get.context != null) {
+                                                    ScaffoldMessenger.of(Get.context!).showSnackBar(snackbar(
+                                                        Get.context!, "playlistBlacklistAlert".tr,
+                                                        size: SanckBarSize.MEDIUM));
+                                                  }
+                                                },
+                                              ),
+                                            // Share
+                                            if (playlistController.playlist.value.isCloudPlaylist)
+                                              _PlaylistIconChip(
+                                                icon: Icons.share_rounded,
+                                                tooltip: "sharePlaylist".tr,
+                                                onTap: () {
+                                                  final c = playlistController.playlist.value;
+                                                  if (c.isPipedPlaylist) {
+                                                    Share.share("https://piped.video/playlist?list=${c.playlistId}");
+                                                  } else {
+                                                    final prefix = c.playlistId.substring(0, 2) == "VL";
+                                                    Share.share(
+                                                        "https://youtube.com/playlist?list=${prefix ? c.playlistId.substring(2) : c.playlistId}");
+                                                  }
+                                                },
+                                              ),
+                                            // Export
+                                            _PlaylistIconChip(
+                                              icon: Icons.file_upload_rounded,
+                                              tooltip: "exportPlaylist".tr,
+                                              onTap: () => showDialog(
+                                                context: context,
+                                                builder: (dialogContext) => PlaylistExportDialog(
+                                                    controller: playlistController, parentContext: context),
                                               ),
                                             ),
-                                          // Export button - opens export dialog
-                                          IconButton(
-                                            onPressed: () {
-                                              showDialog(
-                                                context: context,
-                                                builder: (dialogContext) =>
-                                                    PlaylistExportDialog(
-                                                  controller: playlistController,
-                                                  parentContext: context,
-                                                ),
-                                              );
-                                            },
-                                            icon: const Icon(Icons.file_upload),
-                                            tooltip: "exportPlaylist".tr,
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      // ── Pill buttons ──────────────────────
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _PillButton(
+                                              label: "play".tr,
+                                              icon: Icons.play_arrow_rounded,
+                                              filled: true,
+                                              onTap: () => playerController.playPlayListSong(
+                                                List<MediaItem>.from(playlistController.songList),
+                                                0,
+                                                playfrom: PlaylingFrom(
+                                                    name: playlistController.playlist.value.title,
+                                                    type: PlaylingFromType.PLAYLIST),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: _PillButton(
+                                              label: "shuffle".tr,
+                                              icon: Icons.shuffle_rounded,
+                                              filled: false,
+                                              onTap: () {
+                                                final songs = List<MediaItem>.from(playlistController.songList);
+                                                songs.shuffle();
+                                                playerController.playPlayListSong(
+                                                  songs, 0,
+                                                  playfrom: PlaylingFrom(
+                                                      name: playlistController.playlist.value.title,
+                                                      type: PlaylingFromType.PLAYLIST),
+                                                );
+                                              },
+                                            ),
                                           ),
                                         ],
                                       ),
-                                    ),
+                                    ],
                                   ),
                                 );
                               } else if (index == 1) {
@@ -775,5 +680,158 @@ class PlaylistScreen extends StatelessWidget {
       barrierColor: Colors.transparent.withAlpha(100),
       builder: (context) => SongInfoBottomSheet(song),
     ).whenComplete(() => Get.delete<SongInfoController>());
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helper widgets
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Small rounded icon chip used in the secondary action row.
+class _PlaylistIconChip extends StatelessWidget {
+  const _PlaylistIconChip({
+    required this.icon,
+    this.tooltip = '',
+    this.onTap,
+    this.child,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onTap;
+  /// Overrides the icon with a custom widget (e.g. progress indicator).
+  final Widget? child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Padding(
+        padding: const EdgeInsets.only(right: 6),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: onTap,
+          child: Container(
+            height: 36,
+            width: 36,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              color: Theme.of(context)
+                  .textTheme
+                  .titleMedium!
+                  .color!
+                  .withOpacity(0.08),
+            ),
+            child: Center(
+              child: child ??
+                  Icon(icon,
+                      size: 18,
+                      color: onTap == null
+                          ? Theme.of(context)
+                              .textTheme
+                              .titleMedium!
+                              .color!
+                              .withOpacity(0.35)
+                          : Theme.of(context).textTheme.titleMedium!.color),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Large pill-shaped Play or Shuffle button matching the reference design.
+class _PillButton extends StatefulWidget {
+  const _PillButton({
+    required this.label,
+    required this.icon,
+    required this.filled,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool filled;
+  final VoidCallback onTap;
+
+  @override
+  State<_PillButton> createState() => _PillButtonState();
+}
+
+class _PillButtonState extends State<_PillButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 100));
+    _scale = Tween<double>(begin: 1.0, end: 0.93)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeIn));
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bgColor = widget.filled
+        ? Theme.of(context).textTheme.titleLarge!.color!
+        : Colors.transparent;
+    final fgColor = widget.filled
+        ? Theme.of(context).canvasColor
+        : Theme.of(context).textTheme.titleLarge!.color!;
+    final border = widget.filled
+        ? null
+        : Border.all(
+            color: Theme.of(context)
+                .textTheme
+                .titleLarge!
+                .color!
+                .withOpacity(0.35),
+            width: 1.5);
+
+    return GestureDetector(
+      onTapDown: (_) => _ctrl.forward(),
+      onTapUp: (_) {
+        _ctrl.reverse();
+        widget.onTap();
+      },
+      onTapCancel: () => _ctrl.reverse(),
+      child: AnimatedBuilder(
+        animation: _scale,
+        builder: (_, child) =>
+            Transform.scale(scale: _scale.value, child: child),
+        child: Container(
+          height: 48,
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(24),
+            border: border,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(widget.icon, size: 20, color: fgColor),
+              const SizedBox(width: 8),
+              Text(
+                widget.label,
+                style: TextStyle(
+                  color: fgColor,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -55,9 +55,7 @@ class PlayerControlWidget extends StatelessWidget {
                             style: Theme.of(context).textTheme.labelMedium!,
                           ),
                         ),
-                        const SizedBox(
-                          height: 5,
-                        ),
+                        const SizedBox(height: 5),
                         Marquee(
                           delay: const Duration(milliseconds: 300),
                           duration: const Duration(seconds: 10),
@@ -76,33 +74,11 @@ class PlayerControlWidget extends StatelessWidget {
                   }),
                 ),
               ),
-              SizedBox(
-                width: 45,
-                child: IconButton(
-                    onPressed: playerController.toggleFavourite,
-                    icon: Obx(() => AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 300),
-                          transitionBuilder:
-                              (Widget child, Animation<double> animation) {
-                            return ScaleTransition(
-                                scale: animation, child: child);
-                          },
-                          child: Icon(
-                            playerController.isCurrentSongFav.isFalse
-                                ? Icons.favorite_border
-                                : Icons.favorite,
-                            key: ValueKey<bool>(
-                                playerController.isCurrentSongFav.value),
-                            color:
-                                Theme.of(context).textTheme.titleMedium!.color,
-                          ),
-                        ))),
-              ),
+              // Heart / Favourite button with pop animation
+              _FavouriteButton(playerController: playerController),
             ],
           ),
-          const SizedBox(
-            height: 20,
-          ),
+          const SizedBox(height: 20),
           GetX<PlayerController>(builder: (controller) {
             return ProgressBar(
               thumbRadius: 7,
@@ -127,48 +103,39 @@ class PlayerControlWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              IconButton(
-                  onPressed: playerController.toggleShuffleMode,
-                  icon: Obx(() => AnimatedOpacity(
-                        duration: const Duration(milliseconds: 200),
-                        opacity:
-                            playerController.isShuffleModeEnabled.value ? 1.0 : 0.25,
-                        child: Icon(
-                          Ionicons.shuffle,
-                          color: Theme.of(context).textTheme.titleLarge!.color,
-                        ),
-                      ))),
+              // Shuffle — spins on each toggle
+              _AnimatedToggleIconButton(
+                icon: Ionicons.shuffle,
+                isActive: playerController.isShuffleModeEnabled,
+                onTap: playerController.toggleShuffleMode,
+                spinOnToggle: true,
+              ),
               _previousButton(playerController, context),
-              const CircleAvatar(radius: 35, child: AnimatedPlayButton(key: Key("playButton"),)),
+              const CircleAvatar(
+                  radius: 35,
+                  child: AnimatedPlayButton(key: Key("playButton"))),
               _nextButton(playerController, context),
-              Obx(() {
-                return IconButton(
-                    onPressed: playerController.toggleLoopMode,
-                    icon: AnimatedOpacity(
-                      duration: const Duration(milliseconds: 200),
-                      opacity:
-                          playerController.isLoopModeEnabled.value ? 1.0 : 0.25,
-                      child: Icon(
-                        Icons.all_inclusive,
-                        color: Theme.of(context).textTheme.titleLarge!.color,
-                      ),
-                    ));
-              }),
+              // Loop — bounces on each toggle
+              _AnimatedToggleIconButton(
+                icon: Icons.all_inclusive,
+                isActive: playerController.isLoopModeEnabled,
+                onTap: playerController.toggleLoopMode,
+                spinOnToggle: false,
+              ),
             ],
           ),
         ]);
   }
 
-
   Widget _previousButton(
       PlayerController playerController, BuildContext context) {
-    return IconButton(
-      icon: Icon(
-        Icons.skip_previous,
+    return _ScaleOnTapButton(
+      onTap: playerController.prev,
+      child: Icon(
+        Icons.skip_previous_rounded,
         color: Theme.of(context).textTheme.titleMedium!.color,
+        size: 36,
       ),
-      iconSize: 30,
-      onPressed: playerController.prev,
     );
   }
 }
@@ -180,14 +147,210 @@ Widget _nextButton(PlayerController playerController, BuildContext context) {
                 playerController.isQueueLoopModeEnabled.isTrue) &&
             (playerController.currentQueue.last.id ==
                 playerController.currentSong.value?.id));
-    return IconButton(
-        icon: Icon(
-          Icons.skip_next,
-          color: isLastSong
-              ? Theme.of(context).textTheme.titleLarge!.color!.withOpacity(0.2)
-              : Theme.of(context).textTheme.titleMedium!.color,
-        ),
-        iconSize: 30,
-        onPressed: isLastSong ? null : playerController.next);
+    return _ScaleOnTapButton(
+      onTap: isLastSong ? null : playerController.next,
+      child: Icon(
+        Icons.skip_next_rounded,
+        color: isLastSong
+            ? Theme.of(context).textTheme.titleLarge!.color!.withOpacity(0.2)
+            : Theme.of(context).textTheme.titleMedium!.color,
+        size: 36,
+      ),
+    );
   });
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/// An icon button that shrinks briefly on tap and rotates/bounces on toggle.
+class _AnimatedToggleIconButton extends StatefulWidget {
+  const _AnimatedToggleIconButton({
+    required this.icon,
+    required this.isActive,
+    required this.onTap,
+    this.spinOnToggle = false,
+  });
+
+  final IconData icon;
+  final RxBool isActive;
+  final VoidCallback onTap;
+  final bool spinOnToggle;
+
+  @override
+  State<_AnimatedToggleIconButton> createState() =>
+      _AnimatedToggleIconButtonState();
+}
+
+class _AnimatedToggleIconButtonState extends State<_AnimatedToggleIconButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _rotation;
+  late Animation<double> _scale;
+  bool _lastActive = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 420),
+    );
+    _rotation = Tween<double>(begin: 0, end: widget.spinOnToggle ? 1 : 0)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack));
+    _scale = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.35), weight: 40),
+      TweenSequenceItem(tween: Tween(begin: 1.35, end: 0.90), weight: 30),
+      TweenSequenceItem(tween: Tween(begin: 0.90, end: 1.0), weight: 30),
+    ]).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _handleTap() {
+    widget.onTap();
+    _ctrl.forward(from: 0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final active = widget.isActive.value;
+      if (active != _lastActive) _lastActive = active;
+
+      return GestureDetector(
+        onTap: _handleTap,
+        child: AnimatedBuilder(
+          animation: _ctrl,
+          builder: (_, child) => Transform.rotate(
+            angle: _rotation.value * 2 * 3.14159,
+            child: Transform.scale(scale: _scale.value, child: child),
+          ),
+          child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 200),
+            opacity: active ? 1.0 : 0.28,
+            child: Icon(
+              widget.icon,
+              color: Theme.of(context).textTheme.titleLarge!.color,
+              size: 24,
+            ),
+          ),
+        ),
+      );
+    });
+  }
+}
+
+/// Scales down slightly on tap for tactile feel.
+class _ScaleOnTapButton extends StatefulWidget {
+  const _ScaleOnTapButton({required this.child, this.onTap});
+  final Widget child;
+  final VoidCallback? onTap;
+
+  @override
+  State<_ScaleOnTapButton> createState() => _ScaleOnTapButtonState();
+}
+
+class _ScaleOnTapButtonState extends State<_ScaleOnTapButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 120));
+    _scale = Tween<double>(begin: 1.0, end: 0.78)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeIn));
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: widget.onTap != null ? (_) => _ctrl.forward() : null,
+      onTapUp: (_) {
+        _ctrl.reverse();
+        widget.onTap?.call();
+      },
+      onTapCancel: () => _ctrl.reverse(),
+      child: AnimatedBuilder(
+        animation: _scale,
+        builder: (_, child) =>
+            Transform.scale(scale: _scale.value, child: child),
+        child: widget.child,
+      ),
+    );
+  }
+}
+
+/// Heart button with a springy pop animation when favourited.
+class _FavouriteButton extends StatefulWidget {
+  const _FavouriteButton({required this.playerController});
+  final PlayerController playerController;
+
+  @override
+  State<_FavouriteButton> createState() => _FavouriteButtonState();
+}
+
+class _FavouriteButtonState extends State<_FavouriteButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 400));
+    _scale = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.45), weight: 35),
+      TweenSequenceItem(tween: Tween(begin: 1.45, end: 0.85), weight: 30),
+      TweenSequenceItem(tween: Tween(begin: 0.85, end: 1.0), weight: 35),
+    ]).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 45,
+      child: GestureDetector(
+        onTap: () {
+          widget.playerController.toggleFavourite();
+          _ctrl.forward(from: 0);
+        },
+        child: AnimatedBuilder(
+          animation: _scale,
+          builder: (_, child) =>
+              Transform.scale(scale: _scale.value, child: child),
+          child: Obx(() => Icon(
+                widget.playerController.isCurrentSongFav.isFalse
+                    ? Icons.favorite_border_rounded
+                    : Icons.favorite_rounded,
+                color: widget.playerController.isCurrentSongFav.isTrue
+                    ? const Color(0xFFFF5C8D)
+                    : Theme.of(context).textTheme.titleMedium!.color,
+                size: 26,
+              )),
+        ),
+      ),
+    );
+  }
 }

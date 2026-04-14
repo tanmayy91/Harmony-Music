@@ -231,6 +231,7 @@ class Body extends StatelessWidget {
                         final items = homeScreenController
                                 .isContentFetched.value
                             ? [
+                                const _GreetingHeader(),
                                 Obx(() {
                                   final scrollController = ScrollController();
                                   homeScreenController.contentScrollControllers
@@ -248,12 +249,20 @@ class Body extends StatelessWidget {
                                     homeScreenController)
                               ]
                             : [const HomeShimmer()];
-                        return ListView.builder(
-                          physics: const BouncingScrollPhysics(),
-                          padding:
-                              EdgeInsets.only(bottom: 200, top: topPadding),
-                          itemCount: items.length,
-                          itemBuilder: (context, index) => items[index],
+                        return RefreshIndicator(
+                          onRefresh: () async {
+                            homeScreenController.loadContentFromNetwork();
+                          },
+                          color: Theme.of(context).textTheme.titleLarge!.color,
+                          backgroundColor:
+                              Theme.of(context).colorScheme.secondary,
+                          child: ListView.builder(
+                            physics: const BouncingScrollPhysics(),
+                            padding: EdgeInsets.only(
+                                bottom: 200, top: topPadding),
+                            itemCount: items.length,
+                            itemBuilder: (context, index) => items[index],
+                          ),
                         );
                       }),
               ),
@@ -309,5 +318,48 @@ class Body extends StatelessWidget {
         })
         .whereType<Widget>()
         .toList();
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Greeting header widget
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _GreetingHeader extends StatelessWidget {
+  const _GreetingHeader();
+
+  String _greeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return "🌅 Good morning";
+    if (hour < 17) return "☀️ Good afternoon";
+    return "🌙 Good evening";
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _greeting(),
+            style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
+                ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            "What would you like to listen to? 🎵",
+            style: Theme.of(context).textTheme.titleSmall!.copyWith(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w400,
+                ),
+          ),
+        ],
+      ),
+    );
   }
 }

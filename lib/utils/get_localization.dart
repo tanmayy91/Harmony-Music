@@ -2036,7 +2036,15 @@ Map<String, Map<String, String>> get keys => {
     "exportToYouTubeMusicSubtitle": "It will push your playlist (songs < 50) to current queue, don't forget to add to playlist/save after opening in YtMusic",
     "linkCopied": "Link copied to clipboard",
     "keepScreenOnWhilePlaying": "Keep screen on while playing",
-    "keepScreenOnWhilePlayingDes": "If enabled, the device screen will stay awake while music is playing"
+    "keepScreenOnWhilePlayingDes": "If enabled, the device screen will stay awake while music is playing",
+    "fetchingLyrics": "Fetching lyrics...",
+    "credits": "Credits",
+    "madeWithLoveBy": "Made with ❤️ by",
+    "greetingMorning": "🌅 Good morning",
+    "greetingAfternoon": "☀️ Good afternoon",
+    "greetingEvening": "🌙 Good evening",
+    "greetingSubtitle": "What would you like to listen to? 🎵",
+    "unknownArtist": "Unknown"
 },"eo" : {
     "renamePlaylist": "Alinomi Ludliston",
     "trending": "Populara",

@@ -6,9 +6,10 @@ import '../../widgets/loader.dart';
 
 /// A button that animates between a play and pause icon.
 ///
-/// It also shows a loading indicator when the audio is in a loading state.
+/// When playing, a soft pulsing glow ring expands around the button.
+/// Also shows a loading indicator when the audio is in a loading state.
 class AnimatedPlayButton extends StatefulWidget {
-  /// size of the icon.
+  /// Size of the icon.
   final double iconSize;
 
   const AnimatedPlayButton({super.key, this.iconSize = 40.0});
@@ -18,22 +19,45 @@ class AnimatedPlayButton extends StatefulWidget {
 }
 
 class _AnimatedPlayButtonState extends State<AnimatedPlayButton>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  
+    with TickerProviderStateMixin {
+  late AnimationController _iconController;
+  late AnimationController _pulseController;
+  late Animation<double> _pulseScale;
+  late Animation<double> _pulseOpacity;
+
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+    _iconController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
+    );
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
+    _pulseScale = Tween<double>(begin: 0.85, end: 1.25).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeOut),
+    );
+    _pulseOpacity = Tween<double>(begin: 0.35, end: 0.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeOut),
     );
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _iconController.dispose();
+    _pulseController.dispose();
     super.dispose();
+  }
+
+  void _startPulse() {
+    _pulseController.repeat();
+  }
+
+  void _stopPulse() {
+    _pulseController.stop();
+    _pulseController.reset();
   }
 
   @override
@@ -44,24 +68,58 @@ class _AnimatedPlayButtonState extends State<AnimatedPlayButton>
       final isLoading = buttonState == PlayButtonState.loading;
 
       if (isPlaying) {
-        _controller.forward();
+        _iconController.forward();
+        _startPulse();
       } else if (!isLoading) {
-        _controller.reverse();
+        _iconController.reverse();
+        _stopPulse();
       }
 
-      return IconButton(
-        iconSize: widget.iconSize,
-        onPressed: () {
-          isPlaying ? controller.pause() : controller.play();
-        },
-        icon: isLoading
-            ? const LoadingIndicator(
-                dimension: 20,
-              )
-            : AnimatedIcon(
-                icon: AnimatedIcons.play_pause,
-                progress: _controller,
+      final ringColor =
+          Theme.of(context).textTheme.titleLarge?.color ?? Colors.white;
+      // Ring size slightly bigger than the CircleAvatar (radius 35 → diameter 70)
+      const ringSize = 80.0;
+
+      return SizedBox(
+        width: ringSize,
+        height: ringSize,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Pulsing glow ring — only visible when playing
+            if (isPlaying)
+              AnimatedBuilder(
+                animation: _pulseController,
+                builder: (_, __) => Opacity(
+                  opacity: _pulseOpacity.value,
+                  child: Transform.scale(
+                    scale: _pulseScale.value,
+                    child: Container(
+                      width: ringSize,
+                      height: ringSize,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: ringColor.withOpacity(0.18),
+                      ),
+                    ),
+                  ),
+                ),
               ),
+            // The actual icon button
+            IconButton(
+              iconSize: widget.iconSize,
+              onPressed: () {
+                isPlaying ? controller.pause() : controller.play();
+              },
+              icon: isLoading
+                  ? const LoadingIndicator(dimension: 20)
+                  : AnimatedIcon(
+                      icon: AnimatedIcons.play_pause,
+                      progress: _iconController,
+                    ),
+            ),
+          ],
+        ),
       );
     });
   }

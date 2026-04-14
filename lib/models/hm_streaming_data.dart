@@ -1,4 +1,4 @@
-import 'package:harmonymusic/services/stream_service.dart'show Audio;
+import 'package:harmonymusic/services/stream_service.dart' show Audio;
 
 class HMStreamingData {
   final bool playable;
@@ -13,7 +13,7 @@ class HMStreamingData {
     this.highQualityAudio,
   });
 
-  setQualityIndex(int index) {
+  void setQualityIndex(int index) {
     qualityIndex = index;
   }
 

@@ -46,8 +46,6 @@ class SyncedLyricsService {
       }
     } catch (e) {
       printERROR("Lyrics fetch error: $e");
-    } finally {
-      await lyricsBox.close();
     }
     return null;
   }

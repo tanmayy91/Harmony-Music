@@ -119,7 +119,7 @@ class Downloader extends GetxService {
     }
 
     if (songQueue.isNotEmpty) {
-      triggerDownloadingJob();
+      await triggerDownloadingJob();
     } else {
       isJobRunning.value = false;
       currentSong = null;

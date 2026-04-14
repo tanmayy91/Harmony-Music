@@ -75,7 +75,7 @@ class MyAudioHandler extends BaseAudioHandler with GetxServiceMixin {
 
   MyAudioHandler() {
     if (GetPlatform.isWindows || GetPlatform.isLinux) {
-      JustAudioMediaKit.title = 'Harmony music';
+      JustAudioMediaKit.title = 'Nerox Music';
       JustAudioMediaKit.protocolWhitelist = const ['http', 'https', 'file'];
     }
     _mediaLibrary = MediaLibrary();

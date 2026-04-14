@@ -2039,11 +2039,11 @@ Map<String, Map<String, String>> get keys => {
     "keepScreenOnWhilePlayingDes": "If enabled, the device screen will stay awake while music is playing",
     "fetchingLyrics": "Fetching lyrics...",
     "credits": "Credits",
-    "madeWithLoveBy": "Made with ❤️ by",
-    "greetingMorning": "🌅 Good morning",
-    "greetingAfternoon": "☀️ Good afternoon",
-    "greetingEvening": "🌙 Good evening",
-    "greetingSubtitle": "What would you like to listen to? 🎵",
+    "madeWithLoveBy": "Made with love by",
+    "greetingMorning": "Good morning",
+    "greetingAfternoon": "Good afternoon",
+    "greetingEvening": "Good evening",
+    "greetingSubtitle": "What would you like to listen to?",
     "unknownArtist": "Unknown"
 },"eo" : {
     "renamePlaylist": "Alinomi Ludliston",

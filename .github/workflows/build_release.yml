@@ -46,7 +46,7 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: harmony-music-apk
+          name: nerox-music-apk
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 90
 

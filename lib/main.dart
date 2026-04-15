@@ -43,7 +43,7 @@ class MyApp extends StatelessWidget {
     if (!GetPlatform.isDesktop) Get.put(AppLinksController());
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     return GetMaterialApp(
-        title: 'Harmony Music',
+        title: 'Nerox Music',
         home: const Home(),
         debugShowCheckedModeBanner: false,
         translations: Languages(),
@@ -120,12 +120,12 @@ void _setAppInitPrefs() {
   final appPrefs = Hive.box("AppPrefs");
   if (appPrefs.isEmpty) {
     appPrefs.putAll({
-      'themeModeType': 0,
+      'themeModeType': 2,
       "cacheSongs": false,
       "skipSilenceEnabled": false,
       'streamingQuality': 1,
       'themePrimaryColor': 4278199603,
-      'discoverContentType': "QP",
+      'discoverContentType': "TR",
       'newVersionVisibility': updateCheckFlag,
       "cacheHomeScreenData": true
     });

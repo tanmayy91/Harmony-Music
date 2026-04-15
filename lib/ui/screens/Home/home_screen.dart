@@ -335,11 +335,11 @@ class _GreetingHeader extends StatelessWidget {
     return "greetingEvening".tr;
   }
 
-  String _getGreetingEmoji() {
+  IconData _getGreetingIcon() {
     final hour = DateTime.now().hour;
-    if (hour < 12) return "☀️";
-    if (hour < 17) return "🎵";
-    return "🌙";
+    if (hour < 12) return Icons.wb_sunny_rounded;
+    if (hour < 17) return Icons.music_note_rounded;
+    return Icons.nightlight_round;
   }
 
   @override
@@ -360,9 +360,10 @@ class _GreetingHeader extends StatelessWidget {
                     ),
               ),
               const SizedBox(width: 8),
-              Text(
-                _getGreetingEmoji(),
-                style: const TextStyle(fontSize: 24),
+              Icon(
+                _getGreetingIcon(),
+                size: 24,
+                color: Theme.of(context).textTheme.titleLarge!.color?.withOpacity(0.7),
               ),
             ],
           ),

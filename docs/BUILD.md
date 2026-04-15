@@ -24,11 +24,10 @@
 
 Follow the [official Flutter installation guide](https://docs.flutter.dev/get-started/install).
 
-### 2. Clone and Install Dependencies
+### 2. Install Dependencies
 
 ```bash
-git clone https://github.com/tanmayy91/Harmony-Music.git
-cd Harmony-Music
+cd nerox-music
 flutter pub get
 ```
 

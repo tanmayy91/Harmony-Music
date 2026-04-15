@@ -6,7 +6,6 @@
 
 [![Build & Release APK](https://github.com/tanmayy91/Harmony-Music/actions/workflows/build_release.yml/badge.svg)](https://github.com/tanmayy91/Harmony-Music/actions/workflows/build_release.yml)
 [![GitHub Pages](https://github.com/tanmayy91/Harmony-Music/actions/workflows/pages.yml/badge.svg)](https://tanmayy91.github.io/Harmony-Music)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Version](https://img.shields.io/badge/version-4.0.0-purple.svg)]()
 
 **A premium, cross-platform music streaming experience built with Flutter.**
@@ -62,7 +61,6 @@ Stream millions of songs. No ads. No login. No limits.
 - No login required
 - No tracking or data collection
 - Piped playlist integration
-- Open source under GPL v3.0
 
 ### Cross-Platform
 - Android
@@ -92,7 +90,6 @@ Help translate Nerox Music — click the badge above or visit the [Weblate proje
 Full documentation is available in the [`docs/`](docs/) folder and on the [website](https://tanmayy91.github.io/Harmony-Music).
 
 - [Architecture Overview](docs/ARCHITECTURE.md)
-- [Contributing Guide](docs/CONTRIBUTING.md)
 - [Build Instructions](docs/BUILD.md)
 
 ---
@@ -100,11 +97,11 @@ Full documentation is available in the [`docs/`](docs/) folder and on the [websi
 ## License
 
 ```
-Nerox Music is free software licensed under GPL v3.0 with the following conditions:
+Nerox Music is proprietary software. All rights reserved.
 
-- Copied/modified versions of this software cannot be used for non-free or profit purposes.
-- You cannot publish copied/modified versions on closed source app repositories
-  like PlayStore/AppStore.
+- This software and its source code may not be copied, modified, or redistributed
+  without explicit written permission from the author.
+- Unauthorized distribution is strictly prohibited.
 ```
 
 ---

@@ -7,7 +7,6 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../screens/Playlist/playlist_screen_controller.dart';
-import '../screens/Settings/settings_screen_controller.dart';
 import '/utils/helper.dart';
 import '/services/piped_service.dart';
 import '/ui/widgets/sleep_timer_bottom_sheet.dart';

@@ -12,7 +12,20 @@
           "package_name": "com.anandnet.harmonymusic"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "616723741130-57hurtr6u6962936mgu098d6ds4o2r54.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.anandnet.harmonymusic",
+            "certificate_hash": "1dd899f726fc3111f021e958264719c9293571f8"
+          }
+        },
+        {
+          "client_id": "616723741130-fh1siculubkcia76jid5tj3hpfounf17.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDpYvoMajGFdTK1Lk1s-o88f7kJ86uYJ7w"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "616723741130-fh1siculubkcia76jid5tj3hpfounf17.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

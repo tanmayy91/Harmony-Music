@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:harmonymusic/utils/helper.dart';
@@ -9,7 +8,6 @@ import '../../widgets/common_dialog_widget.dart';
 import '../../widgets/cust_switch.dart';
 import '../../widgets/backup_dialog.dart';
 import '../../widgets/restore_dialog.dart';
-import '../Auth/auth_screen.dart';
 import '../Library/library_controller.dart';
 import '../../widgets/snackbar.dart';
 import '/ui/widgets/link_piped.dart';
@@ -46,104 +44,6 @@ class SettingsScreen extends StatelessWidget {
             physics: const BouncingScrollPhysics(),
             padding: const EdgeInsets.only(bottom: 200, top: 20),
             children: [
-              // Google account profile card
-              Obx(() {
-                final signed = settingsController.isSignedIn.value;
-                final photoUrl = settingsController.userPhotoUrl.value;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12.0, right: 10),
-                  child: Material(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .surfaceContainerHighest
-                        .withOpacity(0.45),
-                    borderRadius: BorderRadius.circular(14),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 12),
-                      child: Row(
-                        children: [
-                          // Avatar
-                          CircleAvatar(
-                            radius: 26,
-                            backgroundColor:
-                                Theme.of(context).colorScheme.primary,
-                            backgroundImage: (signed && photoUrl != null)
-                                ? CachedNetworkImageProvider(photoUrl)
-                                : null,
-                            child: (signed && photoUrl != null)
-                                ? null
-                                : Icon(
-                                    Icons.person,
-                                    size: 30,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onPrimary,
-                                  ),
-                          ),
-                          const SizedBox(width: 14),
-                          // Name / email
-                          Expanded(
-                            child: signed
-                                ? Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        settingsController
-                                            .userDisplayName.value,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      Text(
-                                        settingsController.userEmail.value,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ],
-                                  )
-                                : Text(
-                                    "signIn".tr,
-                                    style:
-                                        Theme.of(context).textTheme.titleSmall,
-                                  ),
-                          ),
-                          const SizedBox(width: 8),
-                          // Action button
-                          TextButton(
-                              style: TextButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 6),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.circular(20),
-                                  side: BorderSide(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .outline
-                                        .withOpacity(0.5),
-                                  ),
-                                ),
-                              ),
-                              onPressed: signed
-                                  ? settingsController.signOut
-                                  : () => Get.to(() => const AuthScreen()),
-                              child: Text(signed
-                                  ? "signOut".tr
-                                  : "signIn".tr),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }),
               Obx(
                 () => settingsController.isNewVersionAvailable.value
                     ? Padding(

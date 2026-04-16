@@ -7,12 +7,12 @@ import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:terminate_restart/terminate_restart.dart';
 
-import '/services/auth_service.dart';
 import '/ui/screens/Search/search_screen_controller.dart';
 import '/utils/get_localization.dart';
 import '/utils/supabase_config.dart';
 import '/services/downloader.dart';
 import '/services/piped_service.dart';
+import '/services/listen_together_service.dart';
 import 'utils/app_link_controller.dart';
 import '/services/audio_handler.dart';
 import '/services/music_service.dart';
@@ -27,6 +27,7 @@ import 'utils/update_check_flag_file.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initHive();
+  // Supabase is used only for Listen Together Realtime — no auth required.
   await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
   _setAppInitPrefs();
   startApplicationServices();
@@ -86,7 +87,7 @@ class MyApp extends StatelessWidget {
 }
 
 Future<void> startApplicationServices() async {
-  Get.put<AuthService>(AuthService(), permanent: true);
+  Get.put<ListenTogetherService>(ListenTogetherService(), permanent: true);
   Get.lazyPut(() => PipedServices(), fenix: true);
   Get.lazyPut(() => MusicServices(), fenix: true);
   Get.lazyPut(() => ThemeController(), fenix: true);

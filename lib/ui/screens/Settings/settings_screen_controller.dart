@@ -1,4 +1,3 @@
-import '/services/auth_service.dart';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -50,16 +49,9 @@ class SettingsScreenController extends GetxController {
   final cacheHomeScreenData = true.obs;
   final currentVersion = "V3.0.0";
 
-  // Auth state (backed by Supabase session)
-  final isSignedIn = false.obs;
-  final userDisplayName = ''.obs;
-  final userEmail = ''.obs;
-  final userPhotoUrl = RxnString();
-
   @override
   void onInit() {
     _setInitValue();
-    _loadAuthState();
     if (updateCheckFlag) _checkNewVersion();
     _createInAppSongDownDir();
     super.onInit();
@@ -347,45 +339,6 @@ class SettingsScreenController extends GetxController {
   void toggleStopPlyabackOnSwipeAway(bool val) {
     setBox.put('stopPlyabackOnSwipeAway', val);
     stopPlyabackOnSwipeAway.value = val;
-  }
-
-  void _loadAuthState() {
-    final auth = Get.find<AuthService>();
-    isSignedIn.value = auth.isSignedIn;
-    userDisplayName.value = auth.displayName.isNotEmpty
-        ? auth.displayName
-        : (setBox.get('localDisplayName', defaultValue: '') as String);
-    userEmail.value = auth.email;
-    userPhotoUrl.value = auth.photoUrl;
-  }
-
-  /// Signs the user out of Supabase and clears local auth observables.
-  Future<void> signOut() async {
-    final auth = Get.find<AuthService>();
-    await auth.signOut();
-    isSignedIn.value = false;
-    userDisplayName.value = '';
-    userEmail.value = '';
-    userPhotoUrl.value = null;
-    ScaffoldMessenger.of(Get.context!).showSnackBar(
-        snackbar(Get.context!, "signOut".tr, size: SanckBarSize.MEDIUM));
-  }
-
-  /// Refreshes auth observables from the current Supabase session.
-  /// Call this after a successful sign-in from the Auth screen.
-  void refreshAuthState() {
-    _loadAuthState();
-  }
-
-  /// Updates the display name both in Supabase user metadata and locally.
-  Future<void> updateDisplayName(String name) async {
-    try {
-      await Get.find<AuthService>().updateDisplayName(name);
-    } catch (_) {
-      // If the update fails (e.g. offline), fall back to local storage only
-    }
-    userDisplayName.value = name;
-    setBox.put('localDisplayName', name);
   }
 
   Future<void> closeAllDatabases() async {

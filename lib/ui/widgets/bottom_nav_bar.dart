@@ -80,9 +80,9 @@ class BottomNavBar extends StatelessWidget {
                   ),
                   _bouncyDest(
                     context,
-                    selectedIcon: Icons.person_rounded,
-                    unselectedIcon: Icons.person_outline_rounded,
-                    label: modifyNgetlabel('profile'.tr),
+                    selectedIcon: Icons.headphones_rounded,
+                    unselectedIcon: Icons.headphones_outlined,
+                    label: modifyNgetlabel('together'.tr),
                     isSelected: selected == 4,
                   ),
                 ],

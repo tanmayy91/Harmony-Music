@@ -35,7 +35,7 @@ class SideNavBar extends StatelessWidget {
                       railDestination(
                           "home".tr, isMobileOrTabScreen, Icons.home_rounded),
                       railDestination(
-                          "profile".tr, isMobileOrTabScreen, Icons.person_rounded),
+                          "together".tr, isMobileOrTabScreen, Icons.headphones_rounded),
                       railDestination("playlists".tr, isMobileOrTabScreen,
                           Icons.library_music_rounded),
                       railDestination(
@@ -72,9 +72,9 @@ class SideNavBar extends StatelessWidget {
                     text: 'home'.tr,
                   ),
                   SideBarItem(
-                    iconSelected: Icons.person_rounded,
-                    iconUnselected: Icons.person_outline_rounded,
-                    text: 'profile'.tr,
+                    iconSelected: Icons.headphones_rounded,
+                    iconUnselected: Icons.headphones_outlined,
+                    text: 'together'.tr,
                   ),
                   SideBarItem(
                     iconSelected: Icons.library_music_rounded,

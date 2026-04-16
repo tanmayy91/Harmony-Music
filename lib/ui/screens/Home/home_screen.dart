@@ -15,7 +15,7 @@ import '../../widgets/quickpickswidget.dart';
 import '../../widgets/shimmer_widgets/home_shimmer.dart';
 import 'home_screen_controller.dart';
 import '../Settings/settings_screen.dart';
-import '../Profile/profile_screen.dart';
+import '../ListenTogether/listen_together_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -261,7 +261,7 @@ class Body extends StatelessWidget {
     } else if (homeScreenController.tabIndex.value == 1) {
       return settingsScreenController.isBottomNavBarEnabled.isTrue
           ? const SearchScreen()
-          : const ProfileScreen();
+          : const ListenTogetherScreen();
     } else if (homeScreenController.tabIndex.value == 2) {
       return settingsScreenController.isBottomNavBarEnabled.isTrue
           ? const CombinedLibrary()
@@ -272,7 +272,7 @@ class Body extends StatelessWidget {
           : const PlaylistNAlbumLibraryWidget();
     } else if (homeScreenController.tabIndex.value == 4) {
       return settingsScreenController.isBottomNavBarEnabled.isTrue
-          ? const ProfileScreen(isBottomNavActive: true)
+          ? const ListenTogetherScreen(isBottomNavActive: true)
           : const LibraryArtistWidget();
     } else if (homeScreenController.tabIndex.value == 5) {
       return const SettingsScreen();

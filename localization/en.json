@@ -303,8 +303,8 @@
     "ltSyncNow": "Sync Now",
     "ltSyncedNow": "Synced to host!",
     "ltAutoSync": "Auto-sync",
-    "ltAutoSyncDesc": "Automatically match the host's song and position",
-    "ltAutoSync5s": "Syncing every 5 seconds",
+    "ltAutoSyncDesc": "Both users stay within 200 ms of each other — no audible gap",
+    "ltAutoSync5s": "Syncing every 0.5 seconds — near real-time",
     "ltSyncStatus": "Sync Active",
     "ltWaitingForHost": "Waiting for host…",
     "ltWaitingDesc": "Your music will sync as soon as the host plays something.",
@@ -313,5 +313,12 @@
     "ltInvalidCode": "Please enter a 6-letter room code.",
     "ltNothingPlaying": "Nothing playing yet",
     "ltNothingPlayingDesc": "Play a song to start sharing it with your guests.",
-    "ltUnknownSong": "Unknown song"
+    "ltUnknownSong": "Unknown song",
+    "ltStep4Chat": "Chat with your friend while listening",
+    "ltChat": "Chat",
+    "ltChatEmpty": "Say something! Your messages appear here.",
+    "ltTypeMessage": "Type a message…",
+    "ltYou": "You",
+    "ltHost": "Host",
+    "ltGuest": "Guest"
 }

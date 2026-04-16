@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// ─── Payload keys ─────────────────────────────────────────────────────────────
+// ─── Payload keys — sync ──────────────────────────────────────────────────────
 const _kSongId = 'songId';
 const _kSongTitle = 'songTitle';
 const _kSongArtist = 'songArtist';
@@ -14,26 +14,33 @@ const _kDurationMs = 'durationMs';
 const _kIsPlaying = 'isPlaying';
 const _kSentAtMs = 'sentAtMs';
 
+// ─── Payload keys — chat ──────────────────────────────────────────────────────
+const _kChatRole = 'role';
+const _kChatText = 'text';
+const _kChatTs = 'ts';
+
 /// [ListenTogetherService] manages ephemeral Supabase Realtime Broadcast
 /// channels to sync music playback between two devices — no login required.
 ///
 /// Design:
-///  • Host creates a room (6-char code) → broadcasts sync events periodically.
+///  • Host creates a room (6-char code) → broadcasts sync every 2 s.
 ///  • Guest joins with the code → receives sync events and mirrors playback.
+///  • Both host and guest can send / receive chat messages on the same channel.
 ///  • Everything is ephemeral: no data is stored in any database.
 class ListenTogetherService extends GetxService {
   RealtimeChannel? _channel;
 
-  // Observables consumed by the UI controller.
+  // ── Observables consumed by the UI ───────────────────────────────────────
   final roomCode = RxnString();
   final isHost = false.obs;
   final isInRoom = false.obs;
   final lastSync = Rxn<SyncPayload>();
   final membersOnline = 0.obs;
 
-  // Callbacks wired by ListenTogetherController.
+  // ── Callbacks wired by ListenTogetherController ──────────────────────────
   void Function(SyncPayload)? onSyncReceived;
   VoidCallback? onHostEnded;
+  void Function(ChatMessage)? onChatReceived;
 
   SupabaseClient get _client => Supabase.instance.client;
 
@@ -48,8 +55,13 @@ class ListenTogetherService extends GetxService {
     _channel = _client.channel('lt-$code',
         opts: const RealtimeChannelConfig(ack: false));
 
-    // Track presence so we know how many members are in the room.
     _channel!
+      // Host listens for chat messages from guest.
+      ..onBroadcast(
+        event: 'chat',
+        callback: (payload) => _handleChat(payload),
+      )
+      // Track presence for member count.
       ..onPresenceSync(callback: (_) {
         membersOnline.value = _channel!.presenceState().length;
       })
@@ -88,6 +100,10 @@ class ListenTogetherService extends GetxService {
         },
       )
       ..onBroadcast(
+        event: 'chat',
+        callback: (payload) => _handleChat(payload),
+      )
+      ..onBroadcast(
         event: 'end',
         callback: (_) {
           onHostEnded?.call();
@@ -104,12 +120,20 @@ class ListenTogetherService extends GetxService {
       });
   }
 
-  // ── Broadcasting (HOST only) ─────────────────────────────────────────────
+  // ── Broadcasting ─────────────────────────────────────────────────────────
 
+  /// Sync broadcast — host only.
   Future<void> broadcastSync(SyncPayload payload) async {
     if (!isInRoom.value || !isHost.value || _channel == null) return;
     await _channel!
         .sendBroadcastMessage(event: 'sync', payload: payload.toMap());
+  }
+
+  /// Chat broadcast — both host and guest can call this.
+  Future<void> broadcastChat(ChatMessage msg) async {
+    if (!isInRoom.value || _channel == null) return;
+    await _channel!
+        .sendBroadcastMessage(event: 'chat', payload: msg.toMap());
   }
 
   // ── Leave / end ──────────────────────────────────────────────────────────
@@ -130,7 +154,16 @@ class ListenTogetherService extends GetxService {
     membersOnline.value = 0;
   }
 
-  // ── Helpers ──────────────────────────────────────────────────────────────
+  // ── Internal ─────────────────────────────────────────────────────────────
+
+  void _handleChat(Map<String, dynamic> payload) {
+    try {
+      final msg = ChatMessage.fromMap(payload);
+      onChatReceived?.call(msg);
+    } catch (e) {
+      debugPrint('ListenTogether: bad chat payload: $e');
+    }
+  }
 
   static String _generateCode() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -187,10 +220,42 @@ class SyncPayload {
         _kSentAtMs: sentAtMs,
       };
 
-  /// Position corrected for network latency since the host sent this payload.
+  /// Playback position corrected for the network round-trip time since
+  /// the host sent this payload.
   Duration get correctedPosition {
     final drift = DateTime.now().millisecondsSinceEpoch - sentAtMs;
     final adjusted = positionMs + (isPlaying ? drift : 0);
-    return Duration(milliseconds: adjusted.clamp(0, durationMs));
+    return Duration(
+        milliseconds: adjusted.clamp(0, durationMs > 0 ? durationMs : adjusted));
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ChatMessage
+// ─────────────────────────────────────────────────────────────────────────────
+
+class ChatMessage {
+  /// 'host' or 'guest'
+  final String senderRole;
+  final String text;
+  final int ts;
+
+  const ChatMessage({
+    required this.senderRole,
+    required this.text,
+    required this.ts,
+  });
+
+  factory ChatMessage.fromMap(Map<String, dynamic> m) => ChatMessage(
+        senderRole: m[_kChatRole] as String? ?? 'guest',
+        text: m[_kChatText] as String? ?? '',
+        ts: (m[_kChatTs] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
+      );
+
+  Map<String, dynamic> toMap() => {
+        _kChatRole: senderRole,
+        _kChatText: text,
+        _kChatTs: ts,
+      };
 }

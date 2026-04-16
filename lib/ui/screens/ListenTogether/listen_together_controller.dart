@@ -9,6 +9,10 @@ import '/services/listen_together_service.dart';
 import '/ui/player/player_controller.dart';
 import '/ui/widgets/snackbar.dart';
 
+/// Maximum position drift before the guest seeks to re-sync (ms).
+/// At 200 ms, both players stay within one broadcast interval of each other.
+const _kSyncDriftThresholdMs = 200;
+
 class ListenTogetherController extends GetxController {
   final _service = Get.find<ListenTogetherService>();
 
@@ -19,28 +23,46 @@ class ListenTogetherController extends GetxController {
   Rxn<SyncPayload> get lastSync => _service.lastSync;
   RxInt get membersOnline => _service.membersOnline;
 
-  // Local UI state
+  // ── Local UI state ────────────────────────────────────────────────────────
   final isConnecting = false.obs;
   final codeInputController = TextEditingController();
-  final autoSync = true.obs; // guest auto-syncs on new song
 
-  // Host sync timer
+  // ── Chat ─────────────────────────────────────────────────────────────────
+  final messages = <ChatMessage>[].obs;
+  final chatInputController = TextEditingController();
+
+  // ── Live position (guest side) ────────────────────────────────────────────
+  /// Estimated current position in ms, updated every second from lastSync
+  /// plus elapsed time so the progress bar animates smoothly without waiting
+  /// for the next broadcast.
+  final livePositionMs = 0.obs;
+  final liveDurationMs = 0.obs;
+  final liveIsPlaying = false.obs;
+
+  // ── Internal timers ───────────────────────────────────────────────────────
   Timer? _hostTimer;
+  Timer? _guestLiveTicker;
 
-  // Track last synced song for guest so we only load on change
+  // ── Track last synced song id to avoid redundant loads ───────────────────
   String? _lastSyncedSongId;
+
+  // ── Timestamp when lastSync was received (used for live ticker) ───────────
+  int _syncReceivedAt = 0;
 
   @override
   void onInit() {
     super.onInit();
     _service.onSyncReceived = _handleGuestSync;
     _service.onHostEnded = _handleHostEnded;
+    _service.onChatReceived = _handleChatReceived;
   }
 
   @override
   void onClose() {
     codeInputController.dispose();
+    chatInputController.dispose();
     _stopHostTimer();
+    _stopGuestTicker();
     super.onClose();
   }
 
@@ -48,10 +70,10 @@ class ListenTogetherController extends GetxController {
 
   Future<void> createRoom() async {
     isConnecting.value = true;
+    messages.clear();
     try {
       await _service.createRoom();
       _startHostTimer();
-      // Immediately broadcast current state if something is playing
       _broadcastNow();
     } catch (e) {
       _showSnack('ltConnectError'.tr);
@@ -60,7 +82,7 @@ class ListenTogetherController extends GetxController {
     }
   }
 
-  /// Manually trigger an immediate sync broadcast (called on play/pause/seek).
+  /// Build and send an immediate sync payload.
   void _broadcastNow() {
     if (!_service.isInRoom.value || !_service.isHost.value) return;
     final player = _tryGetPlayer();
@@ -81,9 +103,11 @@ class ListenTogetherController extends GetxController {
     _service.broadcastSync(payload);
   }
 
+  /// Broadcast every 500 ms for near-real-time synchronisation with no
+  /// audible gap between both users' playback positions.
   void _startHostTimer() {
     _stopHostTimer();
-    _hostTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+    _hostTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
       _broadcastNow();
     });
   }
@@ -102,8 +126,10 @@ class ListenTogetherController extends GetxController {
       return;
     }
     isConnecting.value = true;
+    messages.clear();
     try {
       await _service.joinRoom(code);
+      _startGuestTicker();
     } catch (e) {
       _showSnack('ltConnectError'.tr);
     } finally {
@@ -111,7 +137,7 @@ class ListenTogetherController extends GetxController {
     }
   }
 
-  /// Manually sync guest to the host's last known position.
+  /// Manually re-sync the guest to the host's last known position.
   Future<void> syncNow() async {
     final sync = _service.lastSync.value;
     if (sync == null) return;
@@ -119,8 +145,42 @@ class ListenTogetherController extends GetxController {
     _showSnack('ltSyncedNow'.tr);
   }
 
+  // ── Guest live-position ticker ────────────────────────────────────────────
+
+  /// Runs every 200 ms on the guest side. Recalculates the estimated playback
+  /// position from the last known sync + elapsed time so the progress bar is
+  /// smooth and both users appear to be at the exact same moment of the song.
+  void _startGuestTicker() {
+    _stopGuestTicker();
+    _guestLiveTicker = Timer.periodic(const Duration(milliseconds: 200), (_) {
+      final sync = _service.lastSync.value;
+      if (sync == null) return;
+
+      liveDurationMs.value = sync.durationMs;
+      liveIsPlaying.value = sync.isPlaying;
+
+      if (!sync.isPlaying) {
+        livePositionMs.value = sync.positionMs;
+        return;
+      }
+
+      final elapsedSinceSync =
+          DateTime.now().millisecondsSinceEpoch - _syncReceivedAt;
+      final estimated = sync.positionMs + elapsedSinceSync;
+      livePositionMs.value =
+          estimated.clamp(0, sync.durationMs > 0 ? sync.durationMs : estimated);
+    });
+  }
+
+  void _stopGuestTicker() {
+    _guestLiveTicker?.cancel();
+    _guestLiveTicker = null;
+  }
+
+  // ── Incoming sync handler (guest) ─────────────────────────────────────────
+
   void _handleGuestSync(SyncPayload payload) {
-    if (!autoSync.value) return;
+    _syncReceivedAt = DateTime.now().millisecondsSinceEpoch;
     _applySync(payload, force: false);
   }
 
@@ -130,11 +190,10 @@ class ListenTogetherController extends GetxController {
     if (player == null) return;
     final handler = _tryGetHandler();
 
-    // Load a different song if needed.
+    // ── Load a new song if the host changed track ─────────────────────────
     if (payload.songId != _lastSyncedSongId || force) {
       final current = player.currentSong.value;
       if (current?.id != payload.songId) {
-        // Build a MediaItem from the sync payload and play it.
         final mediaItem = MediaItem(
           id: payload.songId,
           title: payload.songTitle,
@@ -147,45 +206,92 @@ class ListenTogetherController extends GetxController {
               : null,
         );
         await player.pushSongToQueue(mediaItem);
-        // Wait briefly for playback to start before seeking.
+        // Give playback a moment to begin before seeking.
         await Future.delayed(const Duration(milliseconds: 800));
       }
       _lastSyncedSongId = payload.songId;
     }
 
-    // Seek to the corrected position.
+    // ── Seek only when drift exceeds threshold ────────────────────────────
     if (handler != null) {
       final target = payload.correctedPosition;
       final total = Duration(milliseconds: payload.durationMs);
-      if (total > Duration.zero && target <= total) {
-        await handler.seek(target);
+
+      if (force) {
+        // Manual sync — always seek.
+        if (total > Duration.zero && target <= total) {
+          await handler.seek(target);
+        }
+      } else {
+        // Auto-sync — seek only if drift is noticeable.
+        final currentMs =
+            player.progressBarStatus.value.current.inMilliseconds;
+        final drift = (target.inMilliseconds - currentMs).abs();
+        if (drift > _kSyncDriftThresholdMs &&
+            total > Duration.zero &&
+            target <= total) {
+          await handler.seek(target);
+        }
       }
     }
 
-    // Match play/pause state.
+    // ── Mirror play/pause state ───────────────────────────────────────────
     if (handler != null) {
-      if (payload.isPlaying) {
+      final playing = player.buttonState.value == PlayButtonState.playing;
+      if (payload.isPlaying && !playing) {
         await handler.play();
-      } else {
+      } else if (!payload.isPlaying && playing) {
         await handler.pause();
       }
     }
   }
 
   void _handleHostEnded() {
+    _stopGuestTicker();
     _showSnack('ltHostEnded'.tr);
     _service.leaveRoom();
+    messages.clear();
   }
 
-  // ── Leave ────────────────────────────────────────────────────────────────
+  // ── Leave ─────────────────────────────────────────────────────────────────
 
   Future<void> leaveRoom() async {
     _stopHostTimer();
+    _stopGuestTicker();
     _lastSyncedSongId = null;
+    messages.clear();
     await _service.leaveRoom();
   }
 
-  // ── Helpers ──────────────────────────────────────────────────────────────
+  // ── Chat ──────────────────────────────────────────────────────────────────
+
+  Future<void> sendMessage() async {
+    final text = chatInputController.text.trim();
+    if (text.isEmpty) return;
+    chatInputController.clear();
+
+    final msg = ChatMessage(
+      senderRole: _service.isHost.value ? 'host' : 'guest',
+      text: text,
+      ts: DateTime.now().millisecondsSinceEpoch,
+    );
+
+    // Add to local list immediately for instant feedback.
+    messages.add(msg);
+
+    // Broadcast to the other party.
+    await _service.broadcastChat(msg);
+  }
+
+  void _handleChatReceived(ChatMessage msg) {
+    // Only add if the message came from the other party (we already added ours).
+    final myRole = _service.isHost.value ? 'host' : 'guest';
+    if (msg.senderRole != myRole) {
+      messages.add(msg);
+    }
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
 
   void copyCode() {
     final code = _service.roomCode.value;

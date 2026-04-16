@@ -1,9 +1,7 @@
-import '/services/auth_service.dart';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:harmonymusic/services/permission_service.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -51,17 +49,9 @@ class SettingsScreenController extends GetxController {
   final cacheHomeScreenData = true.obs;
   final currentVersion = "V3.0.0";
 
-  // Google Auth state
-  final isSignedIn = false.obs;
-  final userDisplayName = ''.obs;
-  final userEmail = ''.obs;
-  final userPhotoUrl = RxnString();
-  final isSigningIn = false.obs;
-
   @override
   void onInit() {
     _setInitValue();
-    _loadAuthState();
     if (updateCheckFlag) _checkNewVersion();
     _createInAppSongDownDir();
     super.onInit();
@@ -349,74 +339,6 @@ class SettingsScreenController extends GetxController {
   void toggleStopPlyabackOnSwipeAway(bool val) {
     setBox.put('stopPlyabackOnSwipeAway', val);
     stopPlyabackOnSwipeAway.value = val;
-  }
-
-  void _loadAuthState() {
-    final auth = Get.find<AuthService>();
-    isSignedIn.value = auth.isSignedIn;
-    userDisplayName.value = auth.isSignedIn
-        ? auth.displayName
-        : (setBox.get('localDisplayName', defaultValue: '') as String);
-    userEmail.value = auth.email;
-    userPhotoUrl.value = auth.photoUrl;
-  }
-
-  /// Called from main.dart after AuthService is ready; restores session and
-  /// refreshes the observable state so the UI reflects the restored user.
-  Future<void> restoreAndRefreshAuthState() async {
-    final auth = Get.find<AuthService>();
-    final restored = await auth.restoreSession();
-    if (restored) {
-      isSignedIn.value = auth.isSignedIn;
-      userDisplayName.value = auth.displayName;
-      userEmail.value = auth.email;
-      userPhotoUrl.value = auth.photoUrl;
-    }
-  }
-
-  Future<void> signInWithGoogle() async {
-    if (isSigningIn.value) return;
-    isSigningIn.value = true;
-    try {
-      final auth = Get.find<AuthService>();
-      final success = await auth.signIn();
-      if (success) {
-        isSignedIn.value = true;
-        userDisplayName.value = auth.displayName;
-        userEmail.value = auth.email;
-        userPhotoUrl.value = auth.photoUrl;
-        ScaffoldMessenger.of(Get.context!).showSnackBar(
-            snackbar(Get.context!, "${"signedInAs".tr} ${auth.displayName}",
-                size: SanckBarSize.MEDIUM));
-      }
-      // success == false means the user dismissed the picker; no error shown.
-    } on PlatformException catch (e) {
-      // Build a message that includes the error code so configuration issues
-      // are diagnosable without needing ADB logs.
-      final codeInfo = e.code.isNotEmpty ? ' (${e.code})' : '';
-      ScaffoldMessenger.of(Get.context!).showSnackBar(
-          snackbar(Get.context!, "${"googleSignInFailed".tr}$codeInfo",
-              size: SanckBarSize.MEDIUM));
-      printERROR('signInWithGoogle PlatformException [${e.code}]: ${e.message}');
-    } catch (e) {
-      ScaffoldMessenger.of(Get.context!).showSnackBar(
-          snackbar(Get.context!, "googleSignInFailed".tr,
-              size: SanckBarSize.MEDIUM));
-      printERROR('signInWithGoogle: $e');
-    } finally {
-      isSigningIn.value = false;
-    }
-  }
-
-  Future<void> signOutGoogle() async {
-    final auth = Get.find<AuthService>();
-    await auth.signOut();
-    isSignedIn.value = false;
-    userDisplayName.value = '';
-    userEmail.value = '';
-    userPhotoUrl.value = null;
-    ScaffoldMessenger.of(Get.context!).showSnackBar(
-        snackbar(Get.context!, "signOut".tr, size: SanckBarSize.MEDIUM));
   }
 
   Future<void> closeAllDatabases() async {

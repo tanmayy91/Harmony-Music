@@ -660,14 +660,11 @@ class _PlaylistIconChip extends StatelessWidget {
     required this.icon,
     this.tooltip = '',
     this.onTap,
-    this.child,
   });
 
   final IconData icon;
   final String tooltip;
   final VoidCallback? onTap;
-  /// Overrides the icon with a custom widget (e.g. progress indicator).
-  final Widget? child;
 
   @override
   Widget build(BuildContext context) {
@@ -690,16 +687,15 @@ class _PlaylistIconChip extends StatelessWidget {
                   .withOpacity(0.08),
             ),
             child: Center(
-              child: child ??
-                  Icon(icon,
-                      size: 18,
-                      color: onTap == null
-                          ? Theme.of(context)
-                              .textTheme
-                              .titleMedium!
-                              .color!
-                              .withOpacity(0.35)
-                          : Theme.of(context).textTheme.titleMedium!.color),
+              child: Icon(icon,
+                  size: 18,
+                  color: onTap == null
+                      ? Theme.of(context)
+                          .textTheme
+                          .titleMedium!
+                          .color!
+                          .withOpacity(0.35)
+                      : Theme.of(context).textTheme.titleMedium!.color),
             ),
           ),
         ),

@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../Auth/auth_screen.dart';
 import '../Settings/settings_screen_controller.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -39,11 +40,10 @@ class ProfileScreen extends StatelessWidget {
                     photoUrl: photoUrl,
                     displayName: settingsController.userDisplayName.value,
                     email: settingsController.userEmail.value,
-                    onSignIn: () =>
-                        _handleSignIn(context, settingsController),
-                    onSignOut: settingsController.signOutGoogle,
-                    isSigningIn: settingsController.isSigningIn.value,
-                    onSetName: () => _showSetNameDialog(context, settingsController),
+                    onSignIn: () => Get.to(() => const AuthScreen()),
+                    onSignOut: settingsController.signOut,
+                    onEditName: () =>
+                        _showSetNameDialog(context, settingsController),
                   );
                 }),
                 const SizedBox(height: 20),
@@ -101,15 +101,6 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _handleSignIn(
-      BuildContext context, SettingsScreenController ctrl) async {
-    try {
-      await ctrl.signInWithGoogle();
-    } catch (_) {
-      // Error already shown by the controller; nothing extra needed.
-    }
-  }
-
   void _showSetNameDialog(
       BuildContext context, SettingsScreenController ctrl) {
     final textCtrl =
@@ -132,8 +123,7 @@ class ProfileScreen extends StatelessWidget {
             onPressed: () {
               final name = textCtrl.text.trim();
               if (name.isNotEmpty) {
-                ctrl.userDisplayName.value = name;
-                ctrl.setBox.put('localDisplayName', name);
+                ctrl.updateDisplayName(name);
               }
               Navigator.of(ctx).pop();
             },
@@ -205,8 +195,7 @@ class _ProfileCard extends StatelessWidget {
     required this.email,
     required this.onSignIn,
     required this.onSignOut,
-    required this.isSigningIn,
-    required this.onSetName,
+    required this.onEditName,
   });
 
   final bool signed;
@@ -215,125 +204,180 @@ class _ProfileCard extends StatelessWidget {
   final String email;
   final VoidCallback onSignIn;
   final VoidCallback onSignOut;
-  final bool isSigningIn;
-  final VoidCallback onSetName;
+  final VoidCallback onEditName;
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context)
-            .colorScheme
-            .surfaceContainerHighest
-            .withOpacity(0.55),
+        color: colorScheme.surfaceContainerHighest.withOpacity(0.55),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Row(
-        children: [
-          // Avatar — tappable to set name when not signed in
-          GestureDetector(
-            onTap: signed ? null : onSetName,
-            child: CircleAvatar(
+      child: signed ? _SignedInView(
+        photoUrl: photoUrl,
+        displayName: displayName,
+        email: email,
+        onEditName: onEditName,
+        onSignOut: onSignOut,
+      ) : _SignedOutView(onSignIn: onSignIn),
+    );
+  }
+}
+
+class _SignedInView extends StatelessWidget {
+  const _SignedInView({
+    required this.photoUrl,
+    required this.displayName,
+    required this.email,
+    required this.onEditName,
+    required this.onSignOut,
+  });
+
+  final String? photoUrl;
+  final String displayName;
+  final String email;
+  final VoidCallback onEditName;
+  final VoidCallback onSignOut;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Column(
+      children: [
+        Row(
+          children: [
+            // Avatar
+            CircleAvatar(
               radius: 36,
-              backgroundColor: Theme.of(context).colorScheme.primary,
+              backgroundColor: colorScheme.primary,
               backgroundImage:
-                  (signed && photoUrl != null && photoUrl!.isNotEmpty)
+                  (photoUrl != null && photoUrl!.isNotEmpty)
                       ? CachedNetworkImageProvider(photoUrl!)
                       : null,
-              child:
-                  (signed && photoUrl != null && photoUrl!.isNotEmpty)
-                      ? null
-                      : (displayName.isNotEmpty
-                          ? Text(
-                              displayName[0].toUpperCase(),
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onPrimary,
-                              ),
-                            )
-                          : Icon(Icons.person_rounded,
-                              size: 38,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onPrimary)),
+              child: (photoUrl == null || photoUrl!.isEmpty)
+                  ? Text(
+                      displayName.isNotEmpty
+                          ? displayName[0].toUpperCase()
+                          : '?',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onPrimary,
+                      ),
+                    )
+                  : null,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    displayName.isNotEmpty ? displayName : email,
+                    style: Theme.of(context).textTheme.titleMedium,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (displayName.isNotEmpty)
+                    Text(
+                      email,
+                      style: Theme.of(context).textTheme.bodySmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: Text("editProfile".tr),
+                onPressed: onEditName,
+                style: OutlinedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.logout_rounded, size: 18),
+                label: Text("signOut".tr),
+                onPressed: onSignOut,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: colorScheme.error,
+                  side: BorderSide(
+                      color: colorScheme.error.withOpacity(0.5)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _SignedOutView extends StatelessWidget {
+  const _SignedOutView({required this.onSignIn});
+  final VoidCallback onSignIn;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Column(
+      children: [
+        CircleAvatar(
+          radius: 40,
+          backgroundColor: colorScheme.primaryContainer,
+          child: Icon(
+            Icons.person_outline_rounded,
+            size: 44,
+            color: colorScheme.primary,
+          ),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          "signInToUnlock".tr,
+          style: Theme.of(context)
+              .textTheme
+              .titleMedium!
+              .copyWith(fontWeight: FontWeight.bold),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          "signInBenefits".tr,
+          style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                color: colorScheme.onSurface.withOpacity(0.6),
+              ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 16),
+        FilledButton.icon(
+          icon: const Icon(Icons.login_rounded, size: 20),
+          label: Text("signInOrCreateAccount".tr),
+          onPressed: onSignIn,
+          style: FilledButton.styleFrom(
+            minimumSize: const Size(double.infinity, 48),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
             ),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: signed
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(displayName,
-                          style: Theme.of(context).textTheme.titleMedium,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis),
-                      const SizedBox(height: 2),
-                      Text(email,
-                          style: Theme.of(context).textTheme.bodySmall,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis),
-                    ],
-                  )
-                : GestureDetector(
-                    onTap: onSetName,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          displayName.isNotEmpty
-                              ? displayName
-                              : "signInWithGoogle".tr,
-                          style:
-                              Theme.of(context).textTheme.titleSmall,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (displayName.isEmpty)
-                          Text(
-                            "tapToSetName".tr,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall!
-                                .copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .primary),
-                          ),
-                      ],
-                    ),
-                  ),
-          ),
-          const SizedBox(width: 8),
-          isSigningIn
-              ? const SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : TextButton(
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      side: BorderSide(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .outline
-                            .withOpacity(0.5),
-                      ),
-                    ),
-                  ),
-                  onPressed: signed ? onSignOut : onSignIn,
-                  child: Text(signed ? "signOut".tr : "signIn".tr),
-                ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

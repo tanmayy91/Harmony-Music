@@ -9,6 +9,7 @@ import '../../widgets/common_dialog_widget.dart';
 import '../../widgets/cust_switch.dart';
 import '../../widgets/backup_dialog.dart';
 import '../../widgets/restore_dialog.dart';
+import '../Auth/auth_screen.dart';
 import '../Library/library_controller.dart';
 import '../../widgets/snackbar.dart';
 import '/ui/widgets/link_piped.dart';
@@ -108,44 +109,35 @@ class SettingsScreen extends StatelessWidget {
                                     ],
                                   )
                                 : Text(
-                                    "signInWithGoogle".tr,
+                                    "signIn".tr,
                                     style:
                                         Theme.of(context).textTheme.titleSmall,
                                   ),
                           ),
                           const SizedBox(width: 8),
                           // Action button
-                          Obx(
-                            () => settingsController.isSigningIn.value
-                                ? const SizedBox(
-                                    width: 28,
-                                    height: 28,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2),
-                                  )
-                                : TextButton(
-                                    style: TextButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 6),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(20),
-                                        side: BorderSide(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .outline
-                                              .withOpacity(0.5),
-                                        ),
-                                      ),
-                                    ),
-                                    onPressed: signed
-                                        ? settingsController.signOutGoogle
-                                        : settingsController.signInWithGoogle,
-                                    child: Text(signed
-                                        ? "signOut".tr
-                                        : "signIn".tr),
+                          TextButton(
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 6),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius:
+                                      BorderRadius.circular(20),
+                                  side: BorderSide(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .outline
+                                        .withOpacity(0.5),
                                   ),
-                          ),
+                                ),
+                              ),
+                              onPressed: signed
+                                  ? settingsController.signOut
+                                  : () => Get.to(() => const AuthScreen()),
+                              child: Text(signed
+                                  ? "signOut".tr
+                                  : "signIn".tr),
+                            ),
                         ],
                       ),
                     ),

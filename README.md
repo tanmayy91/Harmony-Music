@@ -7,7 +7,7 @@
 [![Build & Release APK](https://github.com/tanmayy91/nerox-music/actions/workflows/build_release.yml/badge.svg)](https://github.com/tanmayy91/nerox-music/actions/workflows/build_release.yml)
 [![GitHub Pages](https://github.com/tanmayy91/nerox-music/actions/workflows/pages.yml/badge.svg)](https://tanmayy91.github.io/nerox-music)
 [![Version](https://img.shields.io/badge/version-4.0.0-purple.svg)]()
-[![IzzyOnDroid](https://img.shields.io/endpoint?url=https://apt.izzysoft.de/fdroid/api/v1/shield/com.anandnet.harmonymusic)](https://apt.izzysoft.de/fdroid/index/apk/com.anandnet.harmonymusic)
+[![IzzyOnDroid](https://img.shields.io/endpoint?url=https://apt.izzysoft.de/fdroid/api/v1/shield/com.nrxstudios.neroxmusic)](https://apt.izzysoft.de/fdroid/index/apk/com.nrxstudios.neroxmusic)
 
 **A premium, cross-platform music streaming experience built with Flutter.**
 
@@ -24,7 +24,8 @@ Stream millions of songs. No ads. No login. No limits.
 | Platform | Download |
 |----------|----------|
 | **Android APK** | [Latest Release](https://github.com/tanmayy91/nerox-music/releases/latest) |
-| **IzzyOnDroid (F-Droid repo)** | [IzzyOnDroid](https://apt.izzysoft.de/fdroid/index/apk/com.anandnet.harmonymusic) |
+| **F-Droid** | *Submission in progress* — see [`docs/fdroid-metadata.yml`](docs/fdroid-metadata.yml) |
+| **IzzyOnDroid (F-Droid repo)** | [IzzyOnDroid](https://apt.izzysoft.de/fdroid/index/apk/com.nrxstudios.neroxmusic) |
 | **Obtainium (auto-updates)** | [Add to Obtainium](obtainium://add/https://github.com/tanmayy91/nerox-music) (tap on mobile) or add `https://github.com/tanmayy91/nerox-music` manually |
 | **Windows EXE** | [Latest Windows Build](https://github.com/tanmayy91/nerox-music/actions/workflows/win_exe.yml) |
 | **CI Build Artifacts** | [Latest Build Artifact](https://github.com/tanmayy91/nerox-music/actions/workflows/build_release.yml) |
